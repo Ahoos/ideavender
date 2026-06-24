@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>취미 빙고 생성기</title>
+    <link rel="stylesheet" href="css/main.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <nav class="topbar" aria-label="주요 메뉴">
+        <a class="brand" href="#" aria-label="취미 빙고 생성기 홈">
+          <span class="brand-mark">B</span>
+          <span>취미 빙고 생성기</span>
+        </a>
+        <span class="nav-note">미션 생성 · 기록 · 자동 회고</span>
+      </nav>
+    </header>
+
+    <main class="app-shell">
+      <section class="hero-section" aria-labelledby="app-title">
+        <p class="eyebrow">Hobby Bingo</p>
+        <h1 id="app-title">취미를 미션으로 만들고, 완료 순간마다 작게 축하해요.</h1>
+        <p>
+          영화와 독서 같은 취미를 빙고판으로 만들고 날짜별 기록을 남기세요.
+          종료일 없이 시작해도 되고, 미션은 AI 추천으로 다시 뽑거나 칸별로 직접 고칠 수 있습니다.
+        </p>
+      </section>
+
+      <aside class="panel creator-panel" aria-labelledby="create-title">
+        <h2 id="create-title">빙고 만들기</h2>
+        <form class="bingo-form" data-role="bingo-form">
+          <label>
+            <span>빙고 이름</span>
+            <input name="title" type="text" placeholder="6월 영화 탐험" required />
+          </label>
+          <label>
+            <span>취미</span>
+            <select name="hobby">
+              <option value="movie">영화</option>
+              <option value="book">독서</option>
+              <option value="music">음악</option>
+              <option value="exhibit">전시</option>
+              <option value="workout">운동</option>
+            </select>
+          </label>
+          <label>
+            <span>색상 테마</span>
+            <select name="theme">
+              <option value="blue">고요한 블루</option>
+              <option value="green">숲의 그린</option>
+              <option value="rose">따뜻한 로즈</option>
+              <option value="mono">미니멀 모노</option>
+            </select>
+          </label>
+          <div class="form-grid">
+            <label>
+              <span>크기</span>
+              <select name="size">
+                <option value="3">3 x 3</option>
+                <option value="5" selected>5 x 5</option>
+              </select>
+            </label>
+            <label>
+              <span>시작일</span>
+              <input name="startDate" type="date" required />
+            </label>
+          </div>
+          <label>
+            <span>종료일 선택</span>
+            <input name="endDate" type="date" />
+          </label>
+          <label>
+            <span>직접 미션 입력</span>
+            <textarea
+              name="customMissions"
+              rows="4"
+              placeholder="한 줄에 하나씩 입력하면 AI 추천 대신 사용합니다."
+            ></textarea>
+          </label>
+          <button class="primary-button" type="submit">새 빙고 생성</button>
+        </form>
+
+        <div class="history-block">
+          <div class="section-head">
+            <h2>히스토리</h2>
+            <button type="button" data-action="clear-history">전체 삭제</button>
+          </div>
+          <div class="bingo-list" data-role="bingo-list"></div>
+        </div>
+      </aside>
+
+      <section class="panel board-panel" aria-labelledby="board-title">
+        <div class="board-header">
+          <div>
+            <p class="eyebrow" data-role="active-period">기간을 설정해 주세요</p>
+            <h2 id="board-title" data-role="active-title">빙고를 만들어 시작하세요</h2>
+          </div>
+          <div class="board-actions">
+            <select data-role="theme-editor" aria-label="현재 빙고 색상 테마">
+              <option value="blue">고요한 블루</option>
+              <option value="green">숲의 그린</option>
+              <option value="rose">따뜻한 로즈</option>
+              <option value="mono">미니멀 모노</option>
+            </select>
+            <button type="button" data-action="reset-missions">AI 미션 전체 리셋</button>
+            <button type="button" data-action="export-report">회고 복사</button>
+          </div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bar"><span data-role="progress-bar"></span></div>
+          <strong data-role="progress-text">0 / 0 완료</strong>
+        </div>
+        <div class="bingo-board" data-role="bingo-board"></div>
+      </section>
+
+      <aside class="panel detail-panel" aria-labelledby="detail-title">
+        <h2 id="detail-title">칸 수정</h2>
+        <form class="cell-form" data-role="cell-form">
+          <p class="empty-copy" data-role="cell-empty">빙고 칸을 누르면 완료 처리되고, 작품/활동 기록을 남길 수 있습니다.</p>
+          <div class="cell-fields" data-role="cell-fields" hidden>
+            <label>
+              <span>미션</span>
+              <textarea name="mission" rows="3"></textarea>
+            </label>
+            <label>
+              <span>작품/활동 제목</span>
+              <input name="activityTitle" type="text" placeholder="예: 로마, 3시간 러닝, 구의 증명" />
+            </label>
+            <div class="form-grid">
+              <label>
+                <span>기록 날짜</span>
+                <input name="activityDate" type="date" />
+              </label>
+              <label class="check-field">
+                <input name="completed" type="checkbox" />
+                <span>완료</span>
+              </label>
+            </div>
+            <label>
+              <span>내용/후기</span>
+              <textarea name="activityNote" rows="5" placeholder="무엇으로 채웠는지, 좋았던 점, 다음에 해볼 것"></textarea>
+            </label>
+            <div class="detail-actions">
+              <button class="primary-button" type="submit">수정 저장</button>
+              <button type="button" data-action="ai-cell">이 칸 AI 추천</button>
+            </div>
+          </div>
+        </form>
+
+        <div class="report-card">
+          <div class="section-head">
+            <h2>자동 회고</h2>
+            <button type="button" data-action="refresh-report">갱신</button>
+          </div>
+          <pre data-role="report-output">빙고를 만들면 회고가 여기에 표시됩니다.</pre>
+        </div>
+        <div class="report-card">
+          <h2>기록 히스토리</h2>
+          <div class="record-list" data-role="record-list"></div>
+        </div>
+      </aside>
+    </main>
+
+    <div class="celebration" data-role="celebration" aria-live="polite"></div>
+    <div class="celebration-screen" data-role="celebration-screen" aria-live="assertive" hidden>
+      <div class="celebration-card">
+        <p class="eyebrow">Bingo Moment</p>
+        <strong data-role="celebration-title">축하합니다!</strong>
+        <span data-role="celebration-detail"></span>
+        <button type="button" data-action="close-celebration">계속 기록하기</button>
+      </div>
+    </div>
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>
