@@ -1,0 +1,20 @@
+# 안티그래비티 바이브코딩 표준 개발 지침
+
+## 1. 기술 제약 조건
+- 외부 JavaScript 라이브러리 및 외부 CSS 프레임워크를 사용하지 않습니다.
+- HTML5, CSS3, 순수 Web API, JavaScript ES6+만 사용합니다.
+- HTML 스크립트 연결은 `<script type="module" src="js/app.js"></script>`를 사용합니다.
+
+## 2. 파일 크기 제한
+- 단일 파일은 주석 포함 500줄 이하로 유지합니다.
+- 기능이 커지면 `js/components/` 또는 `js/utils/`로 분리합니다.
+
+## 3. 구조 규칙
+- 화면 컴포넌트는 `js/components/`에 둡니다.
+- 데이터, 생성 로직, 공통 유틸은 `js/utils/`에 둡니다.
+- 전역 상태는 DOM이 아니라 JavaScript 상태 객체에서 관리합니다.
+
+## 4. 구현 규칙
+- 동적 UI는 정적인 부모 요소에서 이벤트 위임으로 처리합니다.
+- 비동기 작업은 `async/await`와 `try/catch`를 사용합니다.
+- HTML5 시맨틱 태그와 CSS 변수를 적극 사용합니다.
