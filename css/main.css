@@ -72,7 +72,7 @@ button { cursor: pointer; }
 
 .app-shell {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr) 330px;
+  grid-template-columns: 300px minmax(0, 1fr);
   gap: 20px;
   width: min(1280px, calc(100% - 40px));
   margin: 0 auto;
@@ -173,6 +173,7 @@ textarea {
 .board-actions button,
 .section-head button,
 .detail-actions button,
+.palette-options button,
 .celebration-card button {
   border: 0;
   border-radius: var(--radius);
@@ -356,35 +357,6 @@ textarea {
   line-height: 1.6;
 }
 
-.record-list {
-  display: grid;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.record-item {
-  border-left: 3px solid var(--primary);
-  padding: 2px 0 2px 12px;
-}
-
-.record-item time {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.record-item strong {
-  display: block;
-  margin: 4px 0;
-}
-
-.record-item p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.5;
-}
-
 .celebration {
   position: fixed;
   right: 22px;
@@ -430,6 +402,8 @@ textarea {
   transition: opacity 0.22s ease;
 }
 
+.celebration-screen[hidden] { display: none; }
+
 .celebration-screen.is-visible { opacity: 1; }
 
 .celebration-card {
@@ -466,9 +440,7 @@ textarea {
 }
 
 @media (max-width: 1120px) {
-  .app-shell { grid-template-columns: 1fr 1fr; }
-  .board-panel { grid-column: 1 / -1; order: 2; }
-  .detail-panel { order: 3; }
+  .app-shell { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 760px) {

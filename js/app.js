@@ -1,10 +1,7 @@
 import { createCells, createMissions, hobbyLabels } from "./utils/bingoData.js";
-
-const STORAGE_KEY = "hobby-bingo-state-v1";
-const themePalettes = {
-  blue: { primary: "#2f6fed", accent: "#13a87e", soft: "#eef4ff" }, green: { primary: "#28745c", accent: "#b58b2b", soft: "#eef8f3" },
-  rose: { primary: "#bd4964", accent: "#c98535", soft: "#fff1f4" }, mono: { primary: "#252a34", accent: "#777f8f", soft: "#f1f2f4" },
-};
+import { createReport, formatPeriod, getCompletedLineKeys, isFullBingo, normalizeBingo } from "./utils/bingoLogic.js";
+import { loadStateData, saveStateData } from "./utils/supabaseStore.js";
+import { themePalettes } from "./utils/themeData.js";
 
 const state = {
   bingos: [],
@@ -15,6 +12,10 @@ const state = {
 const elements = {
   app: document.querySelector("main"),
   form: document.querySelector('[data-role="bingo-form"]'),
+  formThemeValue: document.querySelector('[data-role="form-theme-value"]'),
+  formThemeLabel: document.querySelector('[data-role="form-theme-label"]'),
+  formThemeDot: document.querySelector('[data-role="form-theme-dot"]'),
+  formThemeMenu: document.querySelector('[data-role="form-theme-menu"]'),
   cellForm: document.querySelector('[data-role="cell-form"]'),
   cellEmpty: document.querySelector('[data-role="cell-empty"]'),
   cellFields: document.querySelector('[data-role="cell-fields"]'),
@@ -24,7 +25,12 @@ const elements = {
   period: document.querySelector('[data-role="active-period"]'),
   progressBar: document.querySelector('[data-role="progress-bar"]'),
   progressText: document.querySelector('[data-role="progress-text"]'),
-  themeEditor: document.querySelector('[data-role="theme-editor"]'),
+  activeThemeLabel: document.querySelector('[data-role="active-theme-label"]'),
+  activeThemeDot: document.querySelector('[data-role="active-theme-dot"]'),
+  activeThemeMenu: document.querySelector('[data-role="active-theme-menu"]'),
+  cellModal: document.querySelector('[data-role="cell-modal"]'),
+  reportModal: document.querySelector('[data-role="report-modal"]'),
+  recordsModal: document.querySelector('[data-role="records-modal"]'),
   report: document.querySelector('[data-role="report-output"]'),
   recordList: document.querySelector('[data-role="record-list"]'),
   celebration: document.querySelector('[data-role="celebration"]'),
@@ -35,21 +41,13 @@ const elements = {
 
 init();
 
-function init() {
-  loadState();
+async function init() {
+  await loadState();
   elements.form.startDate.valueAsDate = new Date();
   document.addEventListener("click", handleClick);
-  document.addEventListener("change", handleChange);
   elements.form.addEventListener("submit", createBingo);
   elements.cellForm.addEventListener("submit", saveCell);
   render();
-}
-
-function handleChange(event) {
-  if (event.target !== elements.themeEditor) return;
-  const bingo = getActiveBingo();
-  if (!bingo) return;
-  bingo.theme = elements.themeEditor.value; saveState(); render();
 }
 
 function handleClick(event) {
@@ -67,6 +65,14 @@ function handleClick(event) {
 
   const actions = {
     "select-bingo": () => selectBingo(actionElement.dataset.bingoId),
+    "set-form-theme": () => setFormTheme(actionElement.dataset.theme),
+    "set-active-theme": () => setActiveTheme(actionElement.dataset.theme),
+    "open-cell": () => openModal(elements.cellModal),
+    "open-report": () => openModal(elements.reportModal),
+    "open-records": () => openModal(elements.recordsModal),
+    "edit-record": () => editRecord(actionElement.dataset.cellId),
+    "delete-record": deleteSelectedRecord,
+    "close-modal": closeModals,
     "close-celebration": closeBigCelebration,
     "reset-missions": resetMissions,
     "ai-cell": suggestCellMission,
@@ -102,8 +108,26 @@ function createBingo(event) {
   state.selectedCellId = "";
   elements.form.reset();
   elements.form.startDate.valueAsDate = new Date();
+  setFormTheme("blue");
   saveState();
   showCelebration("새 빙고가 만들어졌어요", "빙고판을 하나씩 채워볼까요?");
+  render();
+}
+
+function setFormTheme(themeKey) {
+  const theme = themePalettes[themeKey] || themePalettes.blue;
+  elements.formThemeValue.value = themeKey;
+  elements.formThemeLabel.textContent = theme.label;
+  elements.formThemeDot.className = `color-dot theme-${themeKey}`;
+  elements.formThemeMenu.open = false;
+}
+
+function setActiveTheme(themeKey) {
+  const bingo = getActiveBingo();
+  if (!bingo) return;
+  bingo.theme = themeKey;
+  elements.activeThemeMenu.open = false;
+  saveState();
   render();
 }
 
@@ -117,6 +141,12 @@ function selectBingo(id) {
 function selectCell(id) {
   state.selectedCellId = id;
   toggleCell(id);
+}
+
+function editRecord(id) {
+  state.selectedCellId = id;
+  openModal(elements.cellModal);
+  renderDetail();
 }
 
 function toggleCell(id) {
@@ -204,6 +234,7 @@ function saveCell(event) {
     }, 700);
   }
   render();
+  closeModals();
 }
 
 function resetMissions() {
@@ -243,6 +274,23 @@ function suggestCellMission() {
   cell.mission = createMissions(bingo.hobby, 1)[0];
   saveState();
   showCelebration("AI가 새 미션을 골랐어요", "마음에 안 들면 직접 고쳐도 됩니다.");
+  render();
+}
+
+function deleteSelectedRecord() {
+  const cell = getCell(state.selectedCellId);
+  if (!cell) return;
+  cell.completed = false;
+  cell.completedAt = "";
+  cell.activityTitle = "";
+  cell.activityDate = "";
+  cell.activityNote = "";
+  cell.note = "";
+  const bingo = getActiveBingo();
+  bingo.celebratedLines = getCompletedLineKeys(bingo);
+  bingo.fullCelebrated = false;
+  saveState();
+  showCelebration("기록을 삭제했습니다", "이 칸은 다시 진행 전 상태가 되었어요.");
   render();
 }
 
@@ -311,7 +359,7 @@ function renderBoard(bingo) {
   elements.period.textContent = `${hobbyLabels[bingo.hobby]} · ${formatPeriod(bingo)}`;
   elements.progressBar.style.width = `${Math.round((done / total) * 100)}%`;
   elements.progressText.textContent = `${done} / ${total} 완료`;
-  elements.themeEditor.value = bingo.theme || "blue";
+  renderActiveTheme(bingo.theme || "blue");
   elements.board.style.setProperty("--board-size", bingo.size);
   elements.board.innerHTML = bingo.cells.map((cell) => renderCell(cell)).join("");
 }
@@ -354,61 +402,10 @@ function renderRecords(bingo) {
   }
 
   elements.recordList.innerHTML = records.map((cell) => `<article class="record-item">
-    <time>${cell.activityDate || "날짜 없음"}</time>
+    <time>${cell.activityDate || "날짜 없음"}</time><button type="button" data-action="edit-record" data-cell-id="${cell.id}">수정</button>
     <strong>${escapeHtml(cell.activityTitle || cell.mission)}</strong>
     <p>${escapeHtml(cell.activityNote || "후기를 기다리는 기록입니다.")}</p>
   </article>`).join("");
-}
-
-function createReport(bingo) {
-  if (!bingo) {
-    return "빙고를 만들면 회고가 여기에 표시됩니다.";
-  }
-
-  const doneCells = bingo.cells.filter((cell) => cell.completed);
-  const percent = Math.round((doneCells.length / bingo.cells.length) * 100);
-  const lines = getCompletedLineKeys(bingo).length;
-  const recent = doneCells.slice(-3).map((cell) => `- ${cell.mission}${cell.activityTitle ? ` (${cell.activityTitle})` : ""}`).join("\n") || "- 아직 완료한 미션이 없습니다.";
-  const open = bingo.cells.find((cell) => !cell.completed)?.mission || "모든 미션 완료";
-
-  return `# ${bingo.title} 회고
-
-기간: ${formatPeriod(bingo)}
-취미: ${hobbyLabels[bingo.hobby]}
-진행률: ${doneCells.length}/${bingo.cells.length} (${percent}%)
-완성한 빙고 줄: ${lines}줄
-
-최근 완료 미션
-${recent}
-
-다음 추천 미션
-- ${open}
-
-한 줄 회고
-${percent >= 100 ? "빙고 전체를 완성하며 취미 루틴을 끝까지 밀어붙였습니다." : "완료한 칸의 메모를 바탕으로 다음 선택을 조금 더 가볍게 이어갈 수 있습니다."}`;
-}
-
-function getCompletedLineKeys(bingo) {
-  const keys = [];
-  const size = bingo.size;
-  const done = new Set(bingo.cells.filter((cell) => cell.completed).map((cell) => cell.index));
-
-  for (let row = 0; row < size; row += 1) {
-    if (range(size).every((col) => done.has(row * size + col))) keys.push(`row-${row}`);
-  }
-
-  for (let col = 0; col < size; col += 1) {
-    if (range(size).every((row) => done.has(row * size + col))) keys.push(`col-${col}`);
-  }
-
-  if (range(size).every((num) => done.has(num * size + num))) keys.push("diag-main");
-  if (range(size).every((num) => done.has(num * size + (size - 1 - num)))) keys.push("diag-sub");
-
-  return keys;
-}
-
-function isFullBingo(bingo) {
-  return bingo.cells.every((cell) => cell.completed);
 }
 
 function getActiveBingo() {
@@ -419,17 +416,17 @@ function getCell(id) {
   return getActiveBingo()?.cells.find((cell) => cell.id === id);
 }
 
-function loadState() {
-  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+async function loadState() {
+  const saved = await loadStateData();
   state.bingos = (saved.bingos || []).map(normalizeBingo);
   state.activeId = saved.activeId || state.bingos[0]?.id || "";
 }
 
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+  saveStateData({
     bingos: state.bingos,
     activeId: state.activeId,
-  }));
+  });
 }
 
 function showCelebration(title, detail) {
@@ -451,6 +448,20 @@ function showBigCelebration(title, detail) {
   window.requestAnimationFrame(() => elements.celebrationScreen.classList.add("is-visible"));
 }
 
+function openModal(modal) {
+  closeModals(modal);
+  modal.hidden = false;
+  window.requestAnimationFrame(() => modal.classList.add("is-visible"));
+}
+
+function closeModals(except = null) {
+  [elements.cellModal, elements.reportModal, elements.recordsModal].forEach((modal) => {
+    if (modal === except) return;
+    modal.classList.remove("is-visible");
+    window.setTimeout(() => { modal.hidden = true; }, 180);
+  });
+}
+
 function closeBigCelebration() {
   elements.celebrationScreen.classList.remove("is-visible");
   window.setTimeout(() => { elements.celebrationScreen.hidden = true; }, 220);
@@ -464,25 +475,10 @@ function applyTheme(bingo) {
   document.documentElement.style.setProperty("--soft", theme.soft);
 }
 
-function normalizeBingo(bingo) {
-  return {
-    ...bingo,
-    theme: bingo.theme || "blue",
-    cells: bingo.cells.map((cell) => ({
-      ...cell,
-      activityTitle: cell.activityTitle || "",
-      activityDate: cell.activityDate || cell.completedAt || "",
-      activityNote: cell.activityNote || cell.note || "",
-    })),
-  };
-}
-
-function formatPeriod(bingo) {
-  return `${bingo.startDate || "시작일 없음"} ~ ${bingo.endDate || "진행 중"}`;
-}
-
-function range(size) {
-  return Array.from({ length: size }, (_, index) => index);
+function renderActiveTheme(themeKey) {
+  const theme = themePalettes[themeKey] || themePalettes.blue;
+  elements.activeThemeLabel.textContent = theme.label;
+  elements.activeThemeDot.className = `color-dot theme-${themeKey}`;
 }
 
 function today() {

@@ -1,0 +1,138 @@
+.palette-menu {
+  position: relative;
+  min-width: 150px;
+}
+
+.palette-menu summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: var(--radius);
+  color: var(--primary-dark);
+  background: var(--soft);
+  font-size: 14px;
+  font-weight: 900;
+  list-style: none;
+  cursor: pointer;
+}
+
+.palette-menu summary::-webkit-details-marker { display: none; }
+
+.palette-options {
+  position: absolute;
+  right: 0;
+  z-index: 12;
+  display: grid;
+  gap: 6px;
+  min-width: 170px;
+  margin-top: 7px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.palette-options button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 8px;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+}
+
+.color-dot {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+.theme-blue { background: #2f6fed; }
+.theme-green { background: #28745c; }
+.theme-rose { background: #bd4964; }
+.theme-mono { background: #252a34; }
+
+.record-item {
+  position: relative;
+  border-left: 3px solid var(--primary);
+  padding: 2px 60px 2px 12px;
+}
+
+.record-item button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  border: 0;
+  border-radius: var(--radius);
+  padding: 5px 9px;
+  color: var(--primary);
+  background: var(--soft);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.record-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.record-item time {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.record-item strong {
+  display: block;
+  margin: 4px 0;
+}
+
+.record-item p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(247, 248, 251, 0.72);
+  opacity: 0;
+  backdrop-filter: blur(12px);
+  transition: opacity 0.18s ease;
+}
+
+.modal[hidden] { display: none; }
+
+.modal.is-visible { opacity: 1; }
+
+.modal-card {
+  width: min(620px, 100%);
+  max-height: min(760px, calc(100vh - 48px));
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px;
+  background: #fff;
+  box-shadow: 0 26px 70px rgba(31, 45, 71, 0.18);
+}
+
+.modal-card pre {
+  margin: 16px 0 0;
+  white-space: pre-wrap;
+  line-height: 1.65;
+}
